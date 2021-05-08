@@ -20,7 +20,7 @@ import keras
 from keras.utils import to_categorical
 
 def read_data(main_dir):
-#main_dir ='face'
+
 
     folder_name = os.listdir(main_dir)
     persons =[]
@@ -48,10 +48,7 @@ x_palm_path = merge_fpsa_df['palmprint'].tolist()
 x_signature_path = merge_fpsa_df['signature_data'].tolist()
 x_audio = merge_fpsa_df['speaker'].tolist()
 y_id = merge_fpsa_df['name_x'].tolist()
-# print(x_face_path)
-# print(x_palm_path)
-# print(x_signature_path)
-# print(y_id)
+
 
 # face_imgs =[]
 # palm_imgs=[]
@@ -90,61 +87,47 @@ Y = onehot.fit_transform(y)
 print(y_id,y,Y)
 
 
-#train_x,test_x,train_y,test_y = train_test_split(images,Y, test_size=0.2, random_state=0)
 
-# df = pd.read_csv('audio.csv')
-# df.set_index('audio', inplace=True)
-# for f in df.index:
-#     rate,signal = wavfile.read('clean/'+f)
-#     df.at[f,'length']  =signal.shape[0]/rate
-#
-# classes = list(np.unique(df.name))
-# class_dist = df.groupby(['name'])['length'].mean()
-#
-# n_samples = 2*int(df['length'].sum()/0.1)
-# prob_dist = class_dist/class_dist.sum()
-# choices = np.random.choice(class_dist.index, p=prob_dist)
-#
-# def build_rand_feat():
-#     X = []
-#     y =[]
-#     _min, _max = float('inf'), -float('inf')
-#     for _ in tqdm(range(n_samples)):
-#         rand_class = np.random.choice(class_dist.index,p=prob_dist)
-#         file = np.random.choice(df[df.name==rand_class].index)
-#         rate, wav = wavfile.read('clean/'+file)
-#         label = df.at[file,'name']
-#         rand_index = np.random.randint(0,wav.shape[0]-config.step)
-#         sample = wav[rand_index:rand_index+config.step]
-#         X_sample = mfcc(sample,rate,numcep=config.nfeat, nfilt=config.nfilt, nfft=config.nfft).T
-#         _min = min(np.amin(X_sample), _min)
-#         _max = max(np.amax(X_sample), _max)
-#         X.append(X_sample if config.mode =='conv' else X_sample.T)
-#         y.append(classes.index(label))
-#     X,y = np.array(X), np.array(y)
-#     X = (X - _min)/(_max - _min)
-#     if config.mode == 'conv':
-#         X = X.reshape(X.shape[0],X.shape[1],X.shape[2],1)
-#         print(X.shape)
-#     elif config.mode == 'time':
-#         X = X.reshape(X.shape[0],X.shape[1],X.shape[2])
-#     y = to_categorical(y, num_classes=20)
-#     return X,y
-#
-# class Config:
-#     def __init__(self, mode='conv',nfilt=26,nfeat=13, nfft=512,rate=16000):
-#         self.mode = mode
-#         self.nfilt = nfilt
-#         self.nfeat = nfeat
-#         self.nfft = nfft
-#         self.rate = rate
-#         self.step = int(rate/10)
-# config = Config(mode='conv')
-#
-# if config.mode == 'conv':
-#     X, y =build_rand_feat()
-#     y_flat = np.argmax(y, axis=1)
-#     input_shape = (X.shape[1], X.shape[2],1)
+df = pd.read_csv('audio.csv')
+df.set_index('audio', inplace=True)
+for f in df.index:
+    rate,signal = wavfile.read('clean/'+f)
+    df.at[f,'length']  =signal.shape[0]/rate
+
+classes = list(np.unique(df.name))
+class_dist = df.groupby(['name'])['length'].mean()
+
+n_samples = 2*int(df['length'].sum()/0.1)
+prob_dist = class_dist/class_dist.sum()
+choices = np.random.choice(class_dist.index, p=prob_dist)
+
+def build_rand_feat():
+    X = []
+    y =[]
+    _min, _max = float('inf'), -float('inf')
+    for _ in tqdm(range(n_samples)):
+        rand_class = np.random.choice(class_dist.index,p=prob_dist)
+        file = np.random.choice(df[df.name==rand_class].index)
+        rate, wav = wavfile.read('clean/'+file)
+        label = df.at[file,'name']
+        rand_index = np.random.randint(0,wav.shape[0]-config.step)
+        sample = wav[rand_index:rand_index+config.step]
+        X_sample = mfcc(sample,rate,numcep=config.nfeat, nfilt=config.nfilt, nfft=config.nfft).T
+        _min = min(np.amin(X_sample), _min)
+        _max = max(np.amax(X_sample), _max)
+        X.append(X_sample if config.mode =='conv' else X_sample.T)
+        y.append(classes.index(label))
+    X,y = np.array(X), np.array(y)
+    X = (X - _min)/(_max - _min)
+    if config.mode == 'conv':
+        X = X.reshape(X.shape[0],X.shape[1],X.shape[2],1)
+        print(X.shape)
+    elif config.mode == 'time':
+        X = X.reshape(X.shape[0],X.shape[1],X.shape[2])
+    y = to_categorical(y, num_classes=20)
+    return X,y
+
+
 
 
 #face
@@ -215,26 +198,26 @@ xs = Dropout(0.5)(xs)
 xs=Flatten()(xs)
 out3=Dense(20, activation='softmax', name='signature_output')(xs)
 
-# #audio
-# x4 = Input(shape=input_shape, name = 'spaker_input')
-# xa = Conv2D(32, 3,activation='relu')(x4)
-# xa = Conv2D(8, 3, activation='relu')(xa)
-# xa = MaxPooling2D(3, strides=2, padding='same')(xa)
-# xa=Conv2D(32, 3, activation='relu')(xa)
-# xa=MaxPooling2D(3, strides=2, padding='same')(xa)
-# xa=Conv2D(64, 2, activation='relu')(xa)
-# xa=MaxPooling2D(3, strides=2, padding='same')(xa)
-# xa=Reshape(-1, 64)
-#
-#     # Structural Feature Extraction from LSTM
-# xa=LSTM(64, return_sequences=True)(xa)
-# xa=LSTM(64)(xa)
-# xa=BatchNormalization()(xa)
-# xa=Dropout(0.2)(xa)
-# out4=Dense(20, activation='softmax')(xa)
+#audio
+x4 = Input(shape=input_shape, name = 'spaker_input')
+xa = Conv2D(32, 3,activation='relu')(x4)
+xa = Conv2D(8, 3, activation='relu')(xa)
+xa = MaxPooling2D(3, strides=2, padding='same')(xa)
+xa=Conv2D(32, 3, activation='relu')(xa)
+xa=MaxPooling2D(3, strides=2, padding='same')(xa)
+xa=Conv2D(64, 2, activation='relu')(xa)
+xa=MaxPooling2D(3, strides=2, padding='same')(xa)
+xa=Reshape(-1, 64)
 
-#
-merge = Concatenate(axis=1)([out1, out2, out3])  # merge the outputs of the two models
+    # Structural Feature Extraction from LSTM
+xa=LSTM(64, return_sequences=True)(xa)
+xa=LSTM(64)(xa)
+xa=BatchNormalization()(xa)
+xa=Dropout(0.2)(xa)
+out4=Dense(20, activation='softmax')(xa)
+
+#fusion
+merge = Concatenate(axis=1)([out1, out2, out3])  
 fully = Dense(20, activation='sigmoid')(merge)
 fully = Dropout(0.5)(fully)
 fully = Dense(20, activation='sigmoid')(fully)
@@ -250,7 +233,7 @@ final_fc_model.summary()
 # callbacks = [keras.callbacks.ModelCheckpoint("save_at_{epoch}.h5"),]
 final_fc_model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 #
-history=final_fc_model.fit({"face_input": face_imgs, "palmprint_input": palm_imgs, "signature_input": signature_imgs},Y
+history=final_fc_model.fit({"face_input": face_imgs, "palmprint_input": palm_imgs, "signature_input": signature_imgs, "speaker_input": },Y
                             ,epochs=50,batch_size=20,shuffle=True, validation_split=0.2)
 
 
