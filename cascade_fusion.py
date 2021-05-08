@@ -84,66 +84,48 @@ onehot = OneHotEncoder(categories='auto')
 
 Y = onehot.fit_transform(y)
 
-#train_x,test_x,train_y,test_y = train_test_split(images,Y, test_size=0.2, random_state=0)
 
-# df = pd.read_csv('audio.csv')
-# df.set_index('audio', inplace=True)
-# for f in df.index:
-#     rate,signal = wavfile.read('clean/'+f)
-#     df.at[f,'length']  =signal.shape[0]/rate
-#
-# classes = list(np.unique(df.name))
-# class_dist = df.groupby(['name'])['length'].mean()
-#
-# n_samples = 2*int(df['length'].sum()/0.1)
-# prob_dist = class_dist/class_dist.sum()
-# choices = np.random.choice(class_dist.index, p=prob_dist)
-#
-# nfilt=26
-# nfeat=13
-# nfft=512
-# rate=16000
-# step = int(rate/10)
-#
-# def build_rand_feat():
-#     X = []
-#     y =[]
-#     _min, _max = float('inf'), -float('inf')
-#     for _ in tqdm(range(n_samples)):
-#         rand_class = np.random.choice(class_dist.index,p=prob_dist)
-#         file = np.random.choice(df[df.name==rand_class].index)
-#         rate, wav = wavfile.read('clean/'+file)
-#         label = df.at[file,'name']
-#         rand_index = np.random.randint(0,wav.shape[0]-step)
-#         sample = wav[rand_index:rand_index+step]
-#         X_sample = mfcc(sample,rate,numcep=nfeat, nfilt=nfilt, nfft=nfft).T
-#         _min = min(np.amin(X_sample), _min)
-#         _max = max(np.amax(X_sample), _max)
-#         X.append(X_sample)
-#         y.append(classes.index(label))
-#     X,y = np.array(X), np.array(y)
-#     X = (X - _min)/(_max - _min)
-#     X = X.reshape(X.shape[0],X.shape[1],X.shape[2],1)
-#     y = to_categorical(y, num_classes=20)
-#     return X,y
-#
-# class Config:
-#     def __init__(self,mode='conv',nfilt=26,nfeat=13, nfft=512,rate=16000):
-#         self.mode = mode
-#         self.nfilt = nfilt
-#         self.nfeat = nfeat
-#         self.nfft = nfft
-#         self.rate = rate
-#         self.step = int(rate/10)
-#
-#
-# config = Config(mode='conv')
-#
-# if config.mode == 'conv':
-#     X, y =build_rand_feat()
-#     y_flat = np.argmax(y, axis=1)
-#     input_shape = (X.shape[1], X.shape[2],1)
-    #X = np.asarray(X)
+df = pd.read_csv('audio.csv')
+df.set_index('audio', inplace=True)
+for f in df.index:
+    rate,signal = wavfile.read('clean/'+f)
+    df.at[f,'length']  =signal.shape[0]/rate
+
+classes = list(np.unique(df.name))
+class_dist = df.groupby(['name'])['length'].mean()
+
+n_samples = 2*int(df['length'].sum()/0.1)
+prob_dist = class_dist/class_dist.sum()
+choices = np.random.choice(class_dist.index, p=prob_dist)
+
+nfilt=26
+nfeat=13
+nfft=512
+rate=16000
+step = int(rate/10)
+
+def build_rand_feat():
+    X = []
+    y =[]
+    _min, _max = float('inf'), -float('inf')
+    for _ in tqdm(range(n_samples)):
+        rand_class = np.random.choice(class_dist.index,p=prob_dist)
+        file = np.random.choice(df[df.name==rand_class].index)
+        rate, wav = wavfile.read('clean/'+file)
+        label = df.at[file,'name']
+        rand_index = np.random.randint(0,wav.shape[0]-step)
+        sample = wav[rand_index:rand_index+step]
+        X_sample = mfcc(sample,rate,numcep=nfeat, nfilt=nfilt, nfft=nfft).T
+        _min = min(np.amin(X_sample), _min)
+        _max = max(np.amax(X_sample), _max)
+        X.append(X_sample)
+        y.append(classes.index(label))
+    X,y = np.array(X), np.array(y)
+    X = (X - _min)/(_max - _min)
+    X = X.reshape(X.shape[0],X.shape[1],X.shape[2],1)
+    y = to_categorical(y, num_classes=20)
+    return X,y
+
 
 
 #face
@@ -170,7 +152,7 @@ x = Dropout(0.5)(x)
 x = Flatten(name='face_flatten')(x)
 x = Dense(256, activation='relu', name='face_fc1')(x)
 x = Dense(128, activation='relu', name='face_fc2')(x)
-out1 = Dense(20, activation='sigmoid',name='face_output')(x)
+out1 = Dense(20, activation='softmax',name='face_output')(x)
 
 
 #palmprint
@@ -197,7 +179,7 @@ xp = Dropout(0.5)(xp)
 xp = Flatten(name='palm_flatten')(xp)
 xp = Dense(256, activation='relu', name='palm_fc1')(xp)
 xp = Dense(128, activation='relu', name='palm_fc2')(xp)
-out2 = Dense(20, activation='sigmoid', name='palm_output')(xp)
+out2 = Dense(20, activation='softmax', name='palm_output')(xp)
 
 #signature
 x3 = Input(shape=(224,224,3), name='signature_input')
@@ -212,25 +194,25 @@ xs=Conv2D(128, 3, activation='relu',padding='same')(xs)
 xs=MaxPooling2D(2,padding='same')(xs)
 xs = Dropout(0.5)(xs)
 xs=Flatten()(xs)
-out3=Dense(20, activation='sigmoid', name='signature_output')(xs)
+out3=Dense(20, activation='softmax', name='signature_output')(xs)
 
-# #audio
-# x4 = Input(shape=input_shape, name = 'speaker_input')
-# xa = Conv2D(32, 3,activation='relu')(x4)
-# xa = Conv2D(8, 3, activation='relu')(xa)
-# xa = MaxPooling2D(3, strides=2, padding='same')(xa)
-# xa=Conv2D(32, 3, activation='relu')(xa)
-# xa=MaxPooling2D(3, strides=2, padding='same')(xa)
-# xa=Conv2D(64, 2, activation='relu')(xa)
-# xa=MaxPooling2D(3, strides=2, padding='same')(xa)
-# xa=Reshape((-1, 64))(xa)
-#
-#     # Structural Feature Extraction from LSTM
-# xa=LSTM(64, return_sequences=True)(xa)
-# xa=LSTM(64)(xa)
-# xa=BatchNormalization()(xa)
-# xa=Dropout(0.2)(xa)
-# out4=Dense(20, activation='relu', name='audio_output')(xa)
+#audio
+x4 = Input(shape=input_shape, name = 'speaker_input')
+xa = Conv2D(32, 3,activation='relu')(x4)
+xa = Conv2D(8, 3, activation='relu')(xa)
+xa = MaxPooling2D(3, strides=2, padding='same')(xa)
+xa=Conv2D(32, 3, activation='relu')(xa)
+xa=MaxPooling2D(3, strides=2, padding='same')(xa)
+xa=Conv2D(64, 2, activation='relu')(xa)
+xa=MaxPooling2D(3, strides=2, padding='same')(xa)
+xa=Reshape((-1, 64))(xa)
+
+    # Structural Feature Extraction from LSTM
+xa=LSTM(64, return_sequences=True)(xa)
+xa=LSTM(64)(xa)
+xa=BatchNormalization()(xa)
+xa=Dropout(0.2)(xa)
+out4=Dense(20, activation='softmax', name='audio_output')(xa)
 
 #fusion
 merge1 = Concatenate(axis=1)([out1, out2])
@@ -241,15 +223,15 @@ merge2  = Concatenate(axis=1)([fc, out3])
 merge2 = BatchNormalization()(merge2)
 fc2 = Dense(20, kernel_regularizer=l2(0.01),bias_regularizer=l2(0.01),activation='softmax')(merge2)
 
-# merge3  = Concatenate(axis=1)([fc, out4])
-# merge3 = BatchNormalization()(merge3)
-# fc3 = Dense(20, activation='sigmoid')(merge3)
+merge3  = Concatenate(axis=1)([fc, out4])
+merge3 = BatchNormalization()(merge3)
+fc3 = Dense(20, activation='softmax')(merge3)
 
 
 final_cas_model = Model(inputs=[x1, x2,x3], outputs=[fc2])
 final_cas_model.summary()
 final_cas_model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-history=final_cas_model.fit({"face_input": face_imgs, "palmprint_input": palm_imgs, "signature_input": signature_imgs},Y
+history=final_cas_model.fit({"face_input": face_imgs, "palmprint_input": palm_imgs, "signature_input": signature_imgs, 'speaker_input': },Y
                             ,epochs=100, batch_size=20, shuffle=True,validation_split=0.2)
 
 
