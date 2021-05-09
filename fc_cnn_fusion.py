@@ -21,8 +21,6 @@ import matplotlib as plt
 from keras.utils import to_categorical
 
 def read_data(main_dir):
-#main_dir ='face'
-
     folder_name = os.listdir(main_dir)
     persons =[]
 
@@ -81,64 +79,47 @@ Y = onehot.fit_transform(y)
 
 
 
-# df = pd.read_csv('speaker.csv')
-# df.set_index('speaker', inplace=True)
-# for f in df.index:
-#     rate,signal = wavfile.read('clean/'+f)
-#     df.at[f,'length']  =signal.shape[0]/rate
-#
-# classes = list(np.unique(df.name))
-# class_dist = df.groupby(['name'])['length'].mean()
-#
-# n_samples = 2*int(df['length'].sum()/0.1)
-# prob_dist = class_dist/class_dist.sum()
-# choices = np.random.choice(class_dist.index, p=prob_dist)
-#
-# nfilt=26
-# nfeat=13
-# nfft=512
-# rate=16000
-# step = int(rate/10)
-#
-# def build_rand_feat():
-#     X = []
-#     y =[]
-#     _min, _max = float('inf'), -float('inf')
-#     for _ in tqdm(range(n_samples)):
-#         rand_class = np.random.choice(class_dist.index,p=prob_dist)
-#         file = np.random.choice(df[df.name==rand_class].index)
-#         rate, wav = wavfile.read('clean/'+file)
-#         label = df.at[file,'name']
-#         rand_index = np.random.randint(0,wav.shape[0]-step)
-#         sample = wav[rand_index:rand_index+step]
-#         X_sample = mfcc(sample,rate,numcep=nfeat, nfilt=nfilt, nfft=nfft).T
-#         _min = min(np.amin(X_sample), _min)
-#         _max = max(np.amax(X_sample), _max)
-#         X.append(X_sample)
-#         y.append(classes.index(label))
-#     X,y = np.array(X), np.array(y)
-#     X = (X - _min)/(_max - _min)
-#     X = X.reshape(X.shape[0],X.shape[1],X.shape[2],1)
-#     y = to_categorical(y, num_classes=20)
-#     return X,y
+df = pd.read_csv('speaker.csv')
+df.set_index('speaker', inplace=True)
+for f in df.index:
+    rate,signal = wavfile.read('clean/'+f)
+    df.at[f,'length']  =signal.shape[0]/rate
 
-# class Config:
-#     def __init__(self,nfilt=26,nfeat=13, nfft=512,rate=16000):
-#         #self.mode = mode
-#         self.nfilt = nfilt
-#         self.nfeat = nfeat
-#         self.nfft = nfft
-#         self.rate = rate
-#         self.step = int(rate/10)
+classes = list(np.unique(df.name))
+class_dist = df.groupby(['name'])['length'].mean()
 
+n_samples = 2*int(df['length'].sum()/0.1)
+prob_dist = class_dist/class_dist.sum()
+choices = np.random.choice(class_dist.index, p=prob_dist)
 
-#config = Config(mode='conv')
+nfilt=26
+nfeat=13
+nfft=512
+rate=16000
+step = int(rate/10)
 
-#if config.mode == 'conv':
-# X, y =build_rand_feat()
-# y_flat = np.argmax(y, axis=1)
-# input_shape = (X.shape[1], X.shape[2],1)
-# X = np.asarray(X)
+def build_rand_feat():
+    X = []
+    y =[]
+    _min, _max = float('inf'), -float('inf')
+    for _ in tqdm(range(n_samples)):
+        rand_class = np.random.choice(class_dist.index,p=prob_dist)
+        file = np.random.choice(df[df.name==rand_class].index)
+        rate, wav = wavfile.read('clean/'+file)
+        label = df.at[file,'name']
+        rand_index = np.random.randint(0,wav.shape[0]-step)
+        sample = wav[rand_index:rand_index+step]
+        X_sample = mfcc(sample,rate,numcep=nfeat, nfilt=nfilt, nfft=nfft).T
+        _min = min(np.amin(X_sample), _min)
+        _max = max(np.amax(X_sample), _max)
+        X.append(X_sample)
+        y.append(classes.index(label))
+    X,y = np.array(X), np.array(y)
+    X = (X - _min)/(_max - _min)
+    X = X.reshape(X.shape[0],X.shape[1],X.shape[2],1)
+    y = to_categorical(y, num_classes=20)
+    return X,y
+
 
 
 #face
@@ -209,25 +190,25 @@ xs = Dropout(0.5)(xs)
 xs=Flatten()(xs)
 data_out3=Dense(20, activation='softmax', name='signature_output')(xs)
 
-# #audio
-# input4 = Input(shape=input_shape, name = 'spaker_input')
-# xa = Conv2D(32, 3,activation='relu')(x4)
-# xa = Conv2D(8, 3, activation='relu')(xa)
-# xa = MaxPooling2D(3, strides=2, padding='same')(xa)
-# xa=Conv2D(32, 3, activation='relu')(xa)
-# xa=MaxPooling2D(3, strides=2, padding='same')(xa)
-# xa=Conv2D(64, 2, activation='relu')(xa)
-# xa=MaxPooling2D(3, strides=2, padding='same')(xa)
-# xa=Reshape(-1, 64)
-#
-#     # Structural Feature Extraction from LSTM
-# xa=LSTM(64, return_sequences=True)(xa)
-# xa=LSTM(64)(xa)
-# xa=BatchNormalization()(xa)
-# xa=Dropout(0.2)(xa)
-# data_out4=Dense(20, activation='softmax')(xa)
+#audio
+input4 = Input(shape=input_shape, name = 'spaker_input')
+xa = Conv2D(32, 3,activation='relu')(x4)
+xa = Conv2D(8, 3, activation='relu')(xa)
+xa = MaxPooling2D(3, strides=2, padding='same')(xa)
+xa=Conv2D(32, 3, activation='relu')(xa)
+xa=MaxPooling2D(3, strides=2, padding='same')(xa)
+xa=Conv2D(64, 2, activation='relu')(xa)
+xa=MaxPooling2D(3, strides=2, padding='same')(xa)
+xa=Reshape(-1, 64)
 
-#
+    # Structural Feature Extraction from LSTM
+xa=LSTM(64, return_sequences=True)(xa)
+xa=LSTM(64)(xa)
+xa=BatchNormalization()(xa)
+xa=Dropout(0.2)(xa)
+data_out4=Dense(20, activation='softmax')(xa)
+
+#fusion
 merge = Concatenate(axis=1)([data_out1, data_out2,data_out3])  # merge the outputs of the two models
 fc = Dense(20, activation='sigmoid')(merge)
 fc = BatchNormalization()(fc)
@@ -241,12 +222,12 @@ cnn = MaxPool1D(pool_size=2,strides=2)(cnn)
 cnn = Dropout(0.5)(cnn)
 cnn = Flatten()(cnn)
 cnn = BatchNormalization()(cnn)
-final_output = Dense(20, kernel_regularizer=l2(0.01),bias_regularizer=l2(0.01),activation='softmax', name='final_output')(cnn)
+final_output = Dense(20,activation='softmax', name='final_output')(cnn)
 
-fc_cnn_final_model = Model(inputs=[input1, input2,input3], outputs=[final_output])
+fc_cnn_final_model = Model(inputs=[input1, input2,input3,input4], outputs=[final_output])
 fc_cnn_final_model.summary()
 fc_cnn_final_model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-history = fc_cnn_final_model.fit({"face_input": face_imgs,"palmprint_input": palm_imgs,"signature_input":signature_imgs}
+history = fc_cnn_final_model.fit({"face_input": face_imgs,"palmprint_input": palm_imgs,"signature_input":signature_imgs, "speaker_input":}
                                  ,Y,epochs=20, batch_size=20)
 
 
