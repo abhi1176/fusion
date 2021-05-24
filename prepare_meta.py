@@ -1,0 +1,95 @@
+
+import itertools
+import numpy as np
+import os
+import pandas as pd
+
+from random import shuffle
+from glob import glob
+from pprint import pprint
+from sklearn.model_selection import train_test_split
+
+
+train_percent = 0.7
+val_percent = 1
+
+face_dir = "face"
+palm_dir = "palmprint"
+sign_dir = "signature_data"
+audio_dir = "speaker"
+
+persons = os.listdir(face_dir)
+shuffle(persons)
+
+assert len(persons) == len(os.listdir(palm_dir)) == len(os.listdir(sign_dir)) \
+	== len(os.listdir(audio_dir)), "No. of people in face_dir, palm_dir, "\
+	"sign_dir and audio_dir should be the same"
+
+train_rows = []
+val_rows = []
+test_rows = []
+
+for person in persons:
+	faces = list(glob(os.path.join(face_dir, person, "*").replace("\\", "/")))
+	faces = list(map(lambda x: x.replace("\\", "/"), faces))
+	shuffle(faces)
+	split1 = int(len(faces)*train_percent)
+	train_faces, val_faces = faces[:split1], faces[split1:]
+	split2 = int(len(val_faces)*val_percent)
+	val_faces, test_faces = val_faces[:split2], val_faces[split2:]
+
+	palmprints = list(glob(os.path.join(palm_dir, person, "*").replace("\\", "/")))
+	palmprints = list(map(lambda x: x.replace("\\", "/"), palmprints))
+	shuffle(palmprints)
+	split1 = int(len(palmprints)*train_percent)
+	train_palmprints, val_palmprints = palmprints[:split1], palmprints[split1:]
+	split2 = int(len(val_palmprints)*val_percent)
+	val_palmprints, test_palmprints = val_palmprints[:split2], val_palmprints[split2:]
+
+	signatures = list(glob(os.path.join(sign_dir, person, "*").replace("\\", "/")))
+	signatures = list(map(lambda x: x.replace("\\", "/"), signatures))
+	shuffle(signatures)
+	split1 = int(len(signatures)*train_percent)
+	train_signatures, val_signatures = signatures[:split1], signatures[split1:]
+	split2 = int(len(val_signatures)*val_percent)
+	val_signatures, test_signatures = val_signatures[:split2], val_signatures[split2:]
+
+	audios = list(glob(os.path.join(audio_dir, person, "*")))
+	audios = list(map(lambda x: x.replace("\\", "/"), audios))
+	shuffle(audios)
+	split1 = int(len(audios)*train_percent)
+	train_audios, val_audios = audios[:split1], audios[split1:]
+	split2 = int(len(val_audios)*val_percent)
+	val_audios, test_audios = val_audios[:split2], val_audios[split2:]
+
+	train_row = [train_faces, train_palmprints, train_signatures, train_audios]
+	data = list(itertools.product(*train_row))
+	data = np.array(data)
+	labels = np.array([[person]*len(data)]).T
+	data = np.append(data, labels, axis=1)
+	train_rows.extend(data)
+
+	val_row = [val_faces, val_palmprints, val_signatures, val_audios]
+	data = list(itertools.product(*val_row))
+	data = np.array(data)
+	labels = np.array([[person]*len(data)]).T
+	data = np.append(data, labels, axis=1)
+	val_rows.extend(data)
+
+	test_row = [test_faces, test_palmprints, test_signatures, test_audios]
+	data = list(itertools.product(*test_row))
+	if data:
+		data = np.array(data)
+		labels = np.array([[person]*len(data)]).T
+		data = np.append(data, labels, axis=1)
+		test_rows.extend(data)
+
+
+df = pd.DataFrame(train_rows, columns=['face', 'palm_print', 'signature', 'audio', 'label'])
+df.to_csv("train.csv")
+
+df = pd.DataFrame(val_rows, columns=['face', 'palm_print', 'signature', 'audio', 'label'])
+df.to_csv("val.csv")
+
+df = pd.DataFrame(test_rows, columns=['face', 'palm_print', 'signature', 'audio', 'label'])
+df.to_csv("test.csv")
