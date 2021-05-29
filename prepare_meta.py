@@ -10,13 +10,18 @@ from pprint import pprint
 from sklearn.model_selection import train_test_split
 
 
+# train_percent = 0.66
+# val_percent = 0.5
+
 train_percent = 0.7
 val_percent = 1
 
-face_dir = "face"
-palm_dir = "palmprint"
-sign_dir = "signature_data"
-audio_dir = "speaker"
+data_dir = "main_dataset"
+
+face_dir = os.path.join(data_dir, "Face2500")
+palm_dir = os.path.join(data_dir, "CASIA-PalmprintV1")
+sign_dir = os.path.join(data_dir, "signature")
+audio_dir = os.path.join(data_dir, "voxceleb1_wavfile")  # 193 <-- 192 149 <-- 148
 
 persons = os.listdir(face_dir)
 shuffle(persons)
@@ -85,11 +90,11 @@ for person in persons:
 		test_rows.extend(data)
 
 
-df = pd.DataFrame(train_rows, columns=['face', 'palm_print', 'signature', 'audio', 'label'])
+df = pd.DataFrame(train_rows, columns=['face', 'palm_print', 'signature', 'audio', 'label']).sample(frac=1)
 df.to_csv("train.csv")
 
-df = pd.DataFrame(val_rows, columns=['face', 'palm_print', 'signature', 'audio', 'label'])
+df = pd.DataFrame(val_rows, columns=['face', 'palm_print', 'signature', 'audio', 'label']).sample(frac=1)
 df.to_csv("val.csv")
 
-df = pd.DataFrame(test_rows, columns=['face', 'palm_print', 'signature', 'audio', 'label'])
+df = pd.DataFrame(test_rows, columns=['face', 'palm_print', 'signature', 'audio', 'label']).sample(frac=1)
 df.to_csv("test.csv")

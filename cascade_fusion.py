@@ -206,8 +206,7 @@ xa=MaxPooling2D(3, strides=2, padding='same')(xa)
 xa=Conv2D(64, 2, activation='relu')(xa)
 xa=MaxPooling2D(3, strides=2, padding='same')(xa)
 xa=Reshape((-1, 64))(xa)
-
-    # Structural Feature Extraction from LSTM
+# Structural Feature Extraction from LSTM
 xa=LSTM(64, return_sequences=True)(xa)
 xa=LSTM(64)(xa)
 xa=BatchNormalization()(xa)
