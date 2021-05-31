@@ -16,6 +16,8 @@ from sklearn.model_selection import train_test_split
 train_percent = 0.7
 val_percent = 1
 
+num_persons = 300
+
 data_dir = "main_dataset"
 
 face_dir = os.path.join(data_dir, "Face2500")
@@ -23,18 +25,22 @@ palm_dir = os.path.join(data_dir, "CASIA-PalmprintV1")
 sign_dir = os.path.join(data_dir, "signature")
 audio_dir = os.path.join(data_dir, "voxceleb1_wavfile")  # 193 <-- 192 149 <-- 148
 
-persons = os.listdir(face_dir)
-shuffle(persons)
+face_persons = sorted(os.listdir(face_dir)[:num_persons])
+palm_persons = sorted(os.listdir(palm_dir)[:num_persons])
+sign_persons = sorted(os.listdir(sign_dir)[:num_persons])
+audio_persons = sorted(os.listdir(audio_dir)[:num_persons])
 
-assert len(persons) == len(os.listdir(palm_dir)) == len(os.listdir(sign_dir)) \
-	== len(os.listdir(audio_dir)), "No. of people in face_dir, palm_dir, "\
-	"sign_dir and audio_dir should be the same"
+assert face_persons == palm_persons, "People are not same in face and plam directories"
+assert sign_persons == audio_persons, "People are not same in sign and audio directories"
+assert sign_persons == face_persons, "People are not same in sign and face directories"
+
+shuffle(face_persons)
 
 train_rows = []
 val_rows = []
 test_rows = []
 
-for person in persons:
+for person in face_persons:
 	faces = list(glob(os.path.join(face_dir, person, "*").replace("\\", "/")))
 	faces = list(map(lambda x: x.replace("\\", "/"), faces))
 	shuffle(faces)
